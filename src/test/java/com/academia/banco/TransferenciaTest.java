@@ -63,7 +63,9 @@ public class TransferenciaTest {
         @Test
         @DisplayName("sin saldo suficiente, ninguna de las dos cuentas cambia")            // así se ve la prueba en el reporte
         void historailCuentas() {
-            assertThrows(SaldoInsuficienteException.class, ()-> origen.transferir(new BigDecimal("1000.01"), destino));
+            assertThrows(SaldoInsuficienteException.class,
+                    () -> origen.transferir(new BigDecimal("1000.01"), destino));
+
             assertAll(
                     () -> assertEquals(new BigDecimal("1000.00"), origen.getSaldo()),
                     () -> assertEquals(new BigDecimal("0.00"), destino.getSaldo()),

@@ -2,6 +2,7 @@ package com.academia.banco;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -54,9 +55,7 @@ public class CuentaBancaria {
         saldo = saldo.subtract(total);
         retiros++;
         movimientos.add(new Movimiento(TipoMovimiento.RETIRO, m));
-        if (comision.signum() > 0) {
-            movimientos.add(new Movimiento(TipoMovimiento.COMISION, comision));
-        }
+        movimientos.add(new Movimiento(TipoMovimiento.COMISION, comision));
     }
 
     public void transferir(BigDecimal monto, CuentaBancaria destino) {
@@ -71,6 +70,9 @@ public class CuentaBancaria {
             throw new SaldoInsuficienteException(saldo, m);
         }
         saldo = saldo.subtract(m);
+        if (saldo.signum() < 0) {
+            throw new SaldoInsuficienteException(saldo.add(m), m);
+        }
         destino.saldo = destino.saldo.add(m);
         movimientos.add(new Movimiento(TipoMovimiento.TRANSFERENCIA_ENVIADA, m));
         destino.movimientos.add(new Movimiento(TipoMovimiento.TRANSFERENCIA_RECIBIDA, m));
@@ -97,7 +99,7 @@ public class CuentaBancaria {
     }
 
     public List<Movimiento> getMovimientos() {
-        return List.copyOf(movimientos);
+        return Collections.unmodifiableList(movimientos);
     }
 
     private static BigDecimal validarMonto(BigDecimal monto) {
