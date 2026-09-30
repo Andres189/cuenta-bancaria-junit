@@ -24,6 +24,7 @@ public class CuentaBancaria {
     public static final int RETIROS_GRATIS = 3;
     public static final BigDecimal COMISION = new BigDecimal("10.00");
 
+    private boolean cerrada = false;
     private final String titular;
     private BigDecimal saldo = new BigDecimal("0.00");
     private int retiros = 0;
@@ -37,12 +38,18 @@ public class CuentaBancaria {
     }
 
     public void depositar(BigDecimal monto) {
+        if (estaCerrada()) {
+            throw new CuentaCerradaException(this.titular);
+        }
         BigDecimal m = validarMonto(monto);
         saldo = saldo.add(m);
         movimientos.add(new Movimiento(TipoMovimiento.DEPOSITO, m));
     }
 
     public void retirar(BigDecimal monto) {
+        if (estaCerrada()) {
+            throw new CuentaCerradaException(this.titular);
+        }
         BigDecimal m = validarMonto(monto);
         if (m.compareTo(LIMITE_POR_RETIRO) > 0) {
             throw new LimiteExcedidoException(m, LIMITE_POR_RETIRO);
@@ -65,6 +72,14 @@ public class CuentaBancaria {
         if (destino == this) {
             throw new IllegalArgumentException("No puedes transferirte a la misma cuenta");
         }
+
+        if (this.estaCerrada()) {
+            throw new CuentaCerradaException(this.titular);
+        }
+        if (destino.estaCerrada()) {
+            throw new CuentaCerradaException(destino.getTitular());
+        }
+
         BigDecimal m = validarMonto(monto);
         if (m.compareTo(saldo) > 0) {
             throw new SaldoInsuficienteException(saldo, m);
@@ -102,6 +117,10 @@ public class CuentaBancaria {
         return Collections.unmodifiableList(movimientos);
     }
 
+    public boolean getCerrada() {
+        return cerrada;
+    }
+
     private static BigDecimal validarMonto(BigDecimal monto) {
         if (monto == null || monto.signum() <= 0) {
             throw new IllegalArgumentException("El monto debe ser mayor que cero");
@@ -110,5 +129,21 @@ public class CuentaBancaria {
             throw new IllegalArgumentException("El monto no puede tener fracciones de centavo");
         }
         return monto.setScale(2);
+    }
+
+    public boolean estaCerrada() {
+        return cerrada;
+    }
+
+    public void cerrar(){
+
+        if (this.estaCerrada()) {
+            throw new CuentaCerradaException(this.titular);
+        }
+
+        if (this.saldo.compareTo(BigDecimal.ZERO) > 0) {
+            throw new IllegalStateException(String.format("No puedes cerrar una cuenta con saldo: $%.2f", this.saldo));
+        }
+        cerrada = true;
     }
 }
